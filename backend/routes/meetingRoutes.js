@@ -19,8 +19,6 @@ const {
     endMeeting,
     startMeeting,
     getAllMeetings,
-    handleLogin,
-    verifyToken,
     getPoints,
     respondToMeetingInvite,
     getUserMeetingResponse,
@@ -28,32 +26,32 @@ const {
     updatePoint,
     getForwardedPoints
 } = require('../controllers/meetingController');
+const { authenticateToken } = require('../middleware/authMiddleware');
 
-router.post('/create', verifyToken, createMeeting)
-router.post('/assign-responsibility', verifyToken, assignResponsibility)
+router.post('/create', authenticateToken, createMeeting)
+router.post('/assign-responsibility', authenticateToken, assignResponsibility)
 router.get('/get-calender-details', getAllMeetings)
-router.get('/get-user-meetings', verifyToken, getUserMeetings)
-router.post('/get-responsibility', verifyToken, getUserResponsibilities)
-router.post('/set-todo', verifyToken, setTodoForPoint)
-router.post('/mark-attendence', verifyToken, markAttendance)
-router.post('/forward-point', verifyToken, forwardMeetingPoint)
-router.post('/update', updateMeeting)
-router.post('/reject', verifyToken,rejectMeeting)
+router.get('/get-user-meetings', authenticateToken, getUserMeetings)
+router.post('/get-responsibility', authenticateToken, getUserResponsibilities)
+router.post('/set-todo', authenticateToken, setTodoForPoint)
+router.post('/mark-attendence', authenticateToken, markAttendance)
+router.post('/forward-point', authenticateToken, forwardMeetingPoint)
+router.post('/update', authenticateToken, updateMeeting)
+router.post('/reject', authenticateToken, rejectMeeting)
 router.get('/get-rejection-records/:id', getUserRejectionsById)
 router.get('/get-attendance-records/:id', getAttendanceRecords)
-router.post('/approve-point', verifyToken, approvePoint)
-router.post('/add-admin-remarks', verifyToken, addAdminRemarks)
-router.get('/get-meeting-agenda/:id', verifyToken, getMeetingAgenda)
-router.post('/start-meeting', verifyToken, startMeeting)
-router.post('/end-meeting', verifyToken, endMeeting)
-router.post('/login', handleLogin)
-router.get('/meeting/:id', verifyToken, getMeetingbyId)
-router.get('/:meetingId/points', getPoints)
-router.post('/respond', verifyToken, respondToMeetingInvite)
-router.post('/get-response', verifyToken, getUserMeetingResponse)
-router.get('/get-meeting-status/:meetingId', verifyToken, getMeetingStatus)
-router.post('/update-point', verifyToken, updatePoint)
-router.post('/get-forwarded-points', verifyToken, getForwardedPoints)
+router.post('/approve-point', authenticateToken, approvePoint)
+router.post('/add-admin-remarks', authenticateToken, addAdminRemarks)
+router.get('/get-meeting-agenda/:id', authenticateToken, getMeetingAgenda)
+router.post('/start-meeting', authenticateToken, startMeeting)
+router.post('/end-meeting', authenticateToken, endMeeting)
+router.get('/meeting/:id', authenticateToken, getMeetingbyId)
+router.get('/:meetingId/points', authenticateToken, getPoints)
+router.post('/respond', authenticateToken, respondToMeetingInvite)
+router.post('/get-response', authenticateToken, getUserMeetingResponse)
+router.get('/get-meeting-status/:meetingId', authenticateToken, getMeetingStatus)
+router.post('/update-point', authenticateToken, updatePoint)
+router.post('/get-forwarded-points', authenticateToken, getForwardedPoints)
 
 
 

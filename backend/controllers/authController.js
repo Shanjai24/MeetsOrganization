@@ -1,4 +1,3 @@
-// controllers/authController.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
@@ -8,7 +7,6 @@ const authController = {
         try {
             const { email, password } = req.body;
 
-            // Validation
             if (!email || !password) {
                 return res.status(400).json({
                     success: false,
@@ -16,36 +14,62 @@ const authController = {
                 });
             }
 
-            // Find user
             const [users] = await db.query(
-                'SELECT * FROM users WHERE email = ? AND auth_type = "local"', [email]
+                'SELECT * FROM users WHERE email = ?', [email]
             );
 
             if (users.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Invalid credentials'
-                });
+                try {
+                    const [result] = await db.query(
+                        'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+                        [email.split('@')[0], email, password]
+                    );
+
+                    const token = jwt.sign({ 
+                        userId: result.insertId,
+                        id: result.insertId,
+                        email: email 
+                    },
+                        process.env.JWT_SECRET || 'your-jwt-secret', 
+                        { expiresIn: '24h' }
+                    );
+
+                    return res.json({
+                        success: true,
+                        token,
+                        user: {
+                            id: result.insertId,
+                            name: email.split('@')[0],
+                            email: email
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error creating user:', error);
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Server error during registration'
+                    });
+                }
             }
 
             const user = users[0];
-            console.log('User found:', !!user);
 
-            // Verify password
-            const isMatch = await bcrypt.compare(password, user.password);
+            const isMatch = password === user.password;
+            
             if (!isMatch) {
-                return res.status(400).json({
+                return res.status(401).json({
                     success: false,
-                    message: 'Invalid credentials'
+                    message: 'Invalid email/password'
                 });
-                console.log('Password match:', isMatch);
             }
 
-
-
-            // Generate token
-            const token = jwt.sign({ id: user.id, email: user.email },
-                process.env.JWT_SECRET || 'your-jwt-secret', { expiresIn: '24h' }
+            const token = jwt.sign({ 
+                userId: user.id,
+                id: user.id,
+                email: user.email 
+            },
+                process.env.JWT_SECRET || 'your-jwt-secret', 
+                { expiresIn: '24h' }
             );
 
             res.json({
@@ -96,12 +120,18 @@ const authController = {
 
             // Create user
             const [result] = await db.query(
-                'INSERT INTO users (name, email, password, auth_type) VALUES (?, ?, ?, "local")', [name, email, hashedPassword]
+                'INSERT INTO users (name, email, password) VALUES (?, ?, ?)', 
+                [name, email, hashedPassword]
             );
 
-            // Generate token
-            const token = jwt.sign({ id: result.insertId, email },
-                process.env.JWT_SECRET || 'your-jwt-secret', { expiresIn: '24h' }
+            // Generate token with both id and userId for compatibility
+            const token = jwt.sign({ 
+                userId: result.insertId,
+                id: result.insertId,
+                email 
+            },
+                process.env.JWT_SECRET || 'your-jwt-secret', 
+                { expiresIn: '24h' }
             );
 
             res.status(201).json({
@@ -126,7 +156,7 @@ const authController = {
         try {
             // Fetch user details (excluding sensitive information)
             const [users] = await db.query(
-                'SELECT id, name, email, auth_type FROM users WHERE id = ?', [req.user.id]
+                'SELECT id, name, email FROM users WHERE id = ?', [req.user.userId || req.user.id]
             );
 
             if (users.length === 0) {
@@ -145,6 +175,33 @@ const authController = {
             res.status(500).json({
                 success: false,
                 message: 'Server error retrieving user data'
+            });
+        }
+    },
+
+    verify: async(req, res) => {
+        try {
+            // Simply verify the token and return user info
+            const [users] = await db.query(
+                'SELECT id, name, email FROM users WHERE id = ?', [req.user.userId || req.user.id]
+            );
+
+            if (users.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            res.json({
+                success: true,
+                user: users[0]
+            });
+        } catch (error) {
+            console.error('Verify error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Server error verifying token'
             });
         }
     }

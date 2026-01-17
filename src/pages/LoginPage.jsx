@@ -11,25 +11,27 @@ const LoginPage = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
+    setError('');
     
     try {
-      const response = await axios.post('http://localhost:5000/api/meetings/login', { email, password });
+      const response = await axios.post('http://localhost:5000/auth/login', { email, password });
       
       if (response.data && response.data.token) {
-
-        console.log(response.data.user)
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('userId', JSON.stringify(response.data.user));
         onLoginSuccess();
       } else {
-        console.error('Login failed: No token received');
+        setError('Login failed: No token received');
       }
     } catch (error) {
-      console.error('Wrong email or password');
+      const errorMsg = error.response?.data?.message || 'Wrong email or password';
+      setError(errorMsg);
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +53,7 @@ const LoginPage = ({ onLoginSuccess }) => {
           <h1 className="login-page-title login-page-roboto-variable">Login</h1>
           <p className="login-page-subtitle login-page-roboto-variable">
             Enter your credentials to access your account.
-          </p>  
+          </p>
           <button className="login-page-google-btn" disabled={isLoading}>
             <img src={googleIcon} alt="Google" className="login-page-google-icon" />
             Login with Google
@@ -63,6 +65,7 @@ const LoginPage = ({ onLoginSuccess }) => {
           </div>
           <form onSubmit={handleSubmit}>
             <div className="login-page-form-group">
+              {error && <p className="login-page-error" style={{ color: 'red', marginBottom: '0.5rem', fontSize: '0.875rem' }}>{error}</p>}
               <label htmlFor="email" className="login-page-label">Email address</label>
               <input
                 type="email"

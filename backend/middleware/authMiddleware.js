@@ -1,4 +1,3 @@
-// middleware/auth.js
 const jwt = require('jsonwebtoken');
 
 const authenticateToken = (req, res, next) => {
@@ -13,7 +12,7 @@ const authenticateToken = (req, res, next) => {
             });
         }
 
-        jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        jwt.verify(token, process.env.JWT_SECRET || 'your-jwt-secret', (err, user) => {
             if (err) {
                 return res.status(403).json({
                     success: false,

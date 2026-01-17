@@ -409,16 +409,9 @@ const templateList = async (req, res) => {
         `);
 
 
-        if (!templates || templates.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'No templates found'
-            });
-        }
-
         res.status(200).json({
             success: true,
-            data: templates
+            data: templates || []
         });
     } catch (error) {
         console.error('Error fetching template list:', error);

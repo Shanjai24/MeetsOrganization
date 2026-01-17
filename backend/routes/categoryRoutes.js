@@ -1,15 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const categoryController = require('../controllers/categoryController');
-const { protect } = require('../middleware/authMiddleware');
-
-// Ensure protect middleware is a valid function
-if (typeof protect !== 'function') {
-    throw new TypeError('protect must be a middleware function');
-}
+const { authenticateToken } = require('../middleware/authMiddleware');
 
 // Protect all routes with authentication
-router.use(protect);
+router.use(authenticateToken);
 
 // Category routes
 router.get('/', categoryController.getAllCategories);

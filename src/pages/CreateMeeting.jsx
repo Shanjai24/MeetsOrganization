@@ -23,6 +23,7 @@ export default function CreateMeeting({ onUseTemplate, onClose }) {
   useEffect(() => {
     const fetchTemplates = async () => {
       setLoading(true);
+      setError(null);
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -33,11 +34,14 @@ export default function CreateMeeting({ onUseTemplate, onClose }) {
 
         const response = await axios.get('http://localhost:5000/api/templates/list', {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
 
-        if (response.data && response.data.success && response.data.data) {
+        console.log('API Response:', response.data);
+
+        if (response.data && response.data.success && response.data.data && Array.isArray(response.data.data)) {
           // Get the stored category map from localStorage
           let categoryMap = {};
           try {
@@ -63,31 +67,35 @@ export default function CreateMeeting({ onUseTemplate, onClose }) {
             }
             
             return {
-              id: index + 1,
+              id: template.id || index + 1,
               backendId: template.id,
               name: template.name || 'Untitled',
               status: template.status || 'Active',
               category: categoryName,
-              category_name: template.category_name, // Store original API value for reference
+              category_name: template.category_name,
               isActive: template.status === 'Active'
             };
           });
           
+          console.log('Formatted templates:', formattedTemplates);
           setTemplates(formattedTemplates);
         } else {
+          console.error('Unexpected API response structure:', response.data);
+          setError('Invalid response from server');
           setTemplates([]);
         }
       } catch (err) {
         console.error('Error fetching templates:', err);
-        setError('Failed to fetch templates');
-        // Use fallback data if API fails
-        setTemplates([
-          { id: 1, name: "BOS Meeting", status: "Active", category: "COA", isActive: true },
-          { id: 2, name: "Skill Meeting", status: "Inactive", category: "M Team", isActive: false },
-          { id: 3, name: "Academic Meeting", status: "Active", category: "Academic", isActive: true },
-          { id: 4, name: "Grievance Meeting", status: "Inactive", category: "COA", isActive: false },
-          { id: 5, name: "Placement Meeting", status: "Active", category: "COA", isActive: true }
-        ]);
+        console.error('Error details:', err.response?.data);
+        
+        if (err.response?.status === 401) {
+          setError('Authentication failed. Please log in again.');
+        } else if (err.response?.status === 404) {
+          setError('Templates endpoint not found');
+        } else {
+          setError('Failed to fetch templates');
+        }
+        setTemplates([]);
       } finally {
         setLoading(false);
       }
@@ -212,7 +220,14 @@ export default function CreateMeeting({ onUseTemplate, onClose }) {
             </Box>
           ) : error ? (
             <Box sx={{ textAlign: 'center', color: 'error.main', my: 2 }}>
-              <Typography>{error}</Typography>
+              <Typography sx={{ fontSize: '14px', mb: 2 }}>{error}</Typography>
+              <Typography sx={{ fontSize: '12px', color: '#666' }}>
+                Make sure your backend server is running on port 5000
+              </Typography>
+            </Box>
+          ) : templates.length === 0 ? (
+            <Box sx={{ textAlign: 'center', my: 4 }}>
+              <Typography sx={{ color: '#999' }}>No templates found</Typography>
             </Box>
           ) : (
             <TableContainer 
@@ -224,8 +239,8 @@ export default function CreateMeeting({ onUseTemplate, onClose }) {
                 "&::-webkit-scrollbar": {
                   display: "none"
                 },
-                scrollbarWidth: "none", // Firefox
-                msOverflowStyle: "none", // IE and Edge
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
               }}
               onScroll={handleScroll}
             >

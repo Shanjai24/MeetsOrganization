@@ -31,8 +31,6 @@ const insertForwardedPoints = async (meetingId, templateId, userId) => {
             [templateId, userId]
         );
 
-        console.log(userId, meetingId, templateId, futurePoints)
-
         const pointIds = futurePoints.map(p => p.point_id);
 
         if (pointIds.length > 0) {
@@ -50,8 +48,6 @@ const insertForwardedPoints = async (meetingId, templateId, userId) => {
                  WHERE template_id = ? AND user_id = ? AND point_id IN (?)`,
                 [templateId, userId, pointIds]
             );
-
-            console.log(`Forwarded ${pointIds.length} points to meeting ${meetingId}.`);
         }
     } catch (error) {
         console.error("Error inserting forwarded points:", error);
@@ -970,13 +966,6 @@ const forwardMeetingPoint = async (req, res) => {
         });
     }
 
-    // if (forwardType === 'NIL') {
-    //     return res.status(200).json({
-    //         success: true,
-    //         message: `Point ${pointId} not forwarded because forwardType is NIL.`
-    //     });
-    // }
-
     try {
         const [pointExists] = await db.query(
             `SELECT meeting_id FROM meeting_points WHERE id = ?`,
@@ -1827,90 +1816,53 @@ const getAllMeetings = async (req, res) => {
     }
 };
 
-const JWT_SECRET = 'your_secret_key';
-
-const handleLogin = async (req, res) => {
+const getMeetingStatus = async (req, res) => {
     const {
-        email,
-        password
-    } = req.body;
+        meetingId
+    } = req.params;
 
-    if (!email || !password) {
+    if (!meetingId) {
         return res.status(400).json({
             success: false,
-            message: "Email and password are required"
+            message: "meetingId is required.",
         });
     }
 
     try {
-        const [users] = await db.query(
-            `SELECT id, name, email, password, auth_type FROM users WHERE email = ?`,
-            [email]
+        const [
+            [meeting]
+        ] = await db.query(
+            `SELECT id, meeting_name, meeting_status, start_time, end_time, created_by
+             FROM meeting
+             WHERE id = ?`,
+            [meetingId]
         );
 
-        if (users.length === 0) {
+        if (!meeting) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message: "Meeting not found.",
             });
         }
 
-        const user = users[0];
-
-        const isMatch = password === user.password;
-
-        if (!isMatch) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid password"
-            });
-        }
-
-        const token = jwt.sign({
-            userId: user.id,
-            email: user.email
-        }, JWT_SECRET, {
-            expiresIn: '1h'
-        });
-
-        res.json({
+        return res.status(200).json({
             success: true,
-            message: "Login successful",
-            token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email
-            }
+            meeting: {
+                id: meeting.id,
+                name: meeting.meeting_name,
+                status: meeting.meeting_status,
+                startTime: meeting.start_time,
+                endTime: meeting.end_time,
+                createdBy: meeting.created_by,
+            },
         });
+
     } catch (error) {
-        console.error("Login error:", error);
-        res.status(500).json({
+        console.error("Error fetching meeting status:", error);
+        return res.status(500).json({
             success: false,
-            message: "Server error"
-        });
-    }
-};
-
-// Middleware to verify JWT
-const verifyToken = (req, res, next) => {
-    const token = req.headers.authorization.split(' ')[1];
-
-    if (!token) {
-        return res.status(403).json({
-            success: false,
-            message: "Access denied"
-        });
-    }
-
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid token"
+            message: "Server error",
+            error: error.message,
         });
     }
 };
@@ -1927,9 +1879,6 @@ async function updatePoint(req, res) {
         old_todo,
         meetingId
     } = req.body;
-    console.log(point_deadline)
-
-    point_deadline ? new Date(point_deadline).toISOString().slice(0, 19).replace('T', ' ') : null
 
     const accessUserId = req.user.userId;
 
@@ -1939,13 +1888,6 @@ async function updatePoint(req, res) {
         `SELECT created_by FROM meeting WHERE id = ?`,
         [meetingId]
     );
-
-    // if (createdUserId.created_by !== accessUserId) {
-    //     return res.status(403).json({
-    //         success: false,
-    //         message: `Authorization is required`
-    //     });
-    // }
 
     // Convert frontend status to database enum
     const dbApprovalStatus =
@@ -2000,7 +1942,7 @@ async function updatePoint(req, res) {
         });
     }
 
-    values.push(point_id); // For WHERE clause
+    values.push(point_id);
 
     const query = `UPDATE meeting_points SET ${fields.join(", ")} WHERE id = ?`;
 
@@ -2011,59 +1953,6 @@ async function updatePoint(req, res) {
         message: "Meeting point updated successfully"
     });
 }
-
-
-const getMeetingStatus = async (req, res) => {
-    const {
-        meetingId
-    } = req.params;
-
-    if (!meetingId) {
-        return res.status(400).json({
-            success: false,
-            message: "meetingId is required.",
-        });
-    }
-
-    try {
-        const [
-            [meeting]
-        ] = await db.query(
-            `SELECT id, meeting_name, meeting_status, start_time, end_time, created_by
-             FROM meeting
-             WHERE id = ?`,
-            [meetingId]
-        );
-
-        if (!meeting) {
-            return res.status(404).json({
-                success: false,
-                message: "Meeting not found.",
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            meeting: {
-                id: meeting.id,
-                name: meeting.meeting_name,
-                status: meeting.meeting_status,
-                startTime: meeting.start_time,
-                endTime: meeting.end_time,
-                createdBy: meeting.created_by,
-            },
-        });
-
-    } catch (error) {
-        console.error("Error fetching meeting status:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message,
-        });
-    }
-};
-
 
 module.exports = {
     createMeeting,
@@ -2084,12 +1973,10 @@ module.exports = {
     startMeeting,
     endMeeting,
     getAllMeetings,
-    handleLogin,
-    verifyToken,
     getPoints,
     respondToMeetingInvite,
     getUserMeetingResponse,
     getMeetingStatus,
     updatePoint,
     getForwardedPoints
-}
+};

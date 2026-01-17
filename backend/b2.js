@@ -1,15 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const session = require('express-session');
-const passport = require('./config/passport'); // Import from your config
 const cors = require('cors');
 const templateRoutes = require('./routes/templateRoutes');
 const meetingRoutes = require('./routes/meetingRoutes');
 require('dotenv').config();
 
 const { initScheduler } = require('./scheduler/cronJob');
-const reportRoutes = require('./routes/reportRoutes')
-
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
@@ -17,18 +14,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cors());
-
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-}));
-
-app.use(passport.initialize());
 
 const authRoutes = require('./routes/authRoutes');
 app.use('/auth', authRoutes);

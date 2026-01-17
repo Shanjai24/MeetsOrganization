@@ -8,7 +8,6 @@ import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CloseIcon from "@mui/icons-material/Close";
 import VerticalAlignBottomIcon from '@mui/icons-material/VerticalAlignBottom';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
 import { useNavigate, useLocation } from "react-router-dom";
 import { MdDragIndicator } from "react-icons/md";
 import { FiTrash2 } from "react-icons/fi";
@@ -20,7 +19,6 @@ import DatePick from "../components/date";
 import DateTimePicker from "../components/datetime";
 import RepeatOverlay from "../components/RepeatOverlay.jsx";
 import crt from "../assets/Featured icon.png";
-import { set } from "date-fns";
 
 const Submit = () => {
   return (

@@ -4,18 +4,16 @@ import { AiOutlineHome, AiOutlineBarChart, AiOutlineBell, AiOutlineDatabase, AiO
 import { FaHeadset } from 'react-icons/fa';
 import '../styles/Sidebar.css';
 import Logo from '../assets/Logo.svg';
-import ProfileImage from '../assets/profileimage.png'; // Add your profile image here
+import ProfileImage from '../assets/profileimage.png';
 
-const Sidebar = () => {
+const Sidebar = ({ onLogout }) => {
     const location = useLocation();
 
-    // State to store user details
     const [userDetails, setUserDetails] = useState({
         name: "Loading...",
         email: "Loading..."
     });
 
-    // Fetch user details from localStorage on component mount
     useEffect(() => {
         const userData = localStorage.getItem('userId');
         if (userData) {
@@ -31,16 +29,20 @@ const Sidebar = () => {
         }
     }, []);
 
+    const handleLogout = () => {
+        if (onLogout) {
+            onLogout();
+        }
+    };
+
     return (
         <div className="sidebar">
-            {/* Top Section */}
             <div className="sidebar-top">
                 <div className="logo">
                     <img src={Logo} alt="Logo" className="logo-image" />
                 </div>
             </div>
 
-            {/* Menu Section */}
             <div className="sidebar-menu">
                 <NavLink
                     to="/dashboard"
@@ -90,7 +92,6 @@ const Sidebar = () => {
                 </NavLink>
             </div>
 
-            {/* Notification Section */}
             <div className="sidebar-notification">
                 <NavLink
                     to="/support"
@@ -111,14 +112,13 @@ const Sidebar = () => {
 
             <NavLink
                 to="/logout"
+                onClick={handleLogout}
                 className="menu-item logout-button"
             >
                 <AiOutlineLogout size={24} className="icon" />
                 <div className="tooltip">Logout</div>
             </NavLink>
 
-
-            {/* Profile Section */}
             <div className="sidebar-bottom">
                 <div className="menu-item profile-container">
                     <img src={ProfileImage} alt="Profile" className="profile-image" />

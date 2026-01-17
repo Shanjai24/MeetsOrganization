@@ -3,6 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const passport = require('passport');
 const authRoutes = require('./routes/authRoutes');
+const templateRoutes = require('./routes/templateRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const meetingRoutes = require('./routes/meetingRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 require('./config/passport'); // Add this line
 
 const app = express();
@@ -31,6 +35,10 @@ app.use(passport.initialize());
 
 // Routes
 app.use('/auth', authRoutes); // Auth Routes
+app.use('/api/templates', templateRoutes); // Template Routes
+app.use('/api/categories', categoryRoutes); // Category Routes
+app.use('/api/meetings', meetingRoutes); // Meeting Routes
+app.use('/api/reports', reportRoutes); // Report Routes
 
 // OAuth Error Handling
 app.use('/auth/*', (err, req, res, next) => {
